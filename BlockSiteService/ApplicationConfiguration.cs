@@ -13,6 +13,8 @@ namespace BlockSiteService
 
         public string ApplicationTitle { get; set; }
 
+        public string HostsFolderPath { get; set; }
+
         #endregion
 
         #region Constructor
@@ -20,6 +22,7 @@ namespace BlockSiteService
         public ApplicationConfiguration()
         {
             ApplicationTitle = "Base Console Application";
+            HostsFolderPath = @"C:\Windows\System32\Drivers\etc";
         }
 
         #endregion        
