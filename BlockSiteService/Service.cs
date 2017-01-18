@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.IO;
 using System.Configuration;
+using System.Security.Cryptography;
 
 using NLog;
 using BlockSiteService.Utilities;
@@ -73,33 +74,69 @@ namespace BlockSiteService
 
                 if (!backupFile.Exists)
                 {
-                    logger.Info("Unable to find the hosts backup file at '{0}'.", backupFilePath);
-
-                    // Copy the Hosts file and make it read-only
+                    logger.Warn("Unable to find the hosts backup file at '{0}'.", backupFilePath);
+                    hostsFile.CopyTo(backupFilePath);
+                    backupFile = new FileInfo(backupFilePath);
+                    backupFile.IsReadOnly = true;
+                    return;
                 }
 
+                if(! CheckFilesAreEqual(hostsFile, backupFile))
+                {
+                    // If modified, copy the backup file
+                    var timeStampFilePath = string.Format("{0}_Deleted_{1}.bak", hostsFile.FullName, DateTime.Now.ToString("ddMMyyyy_HHmm"));
+                    hostsFile.CopyTo(timeStampFilePath);
+                    backupFile.CopyTo(hostsFilePath, true);
 
-
+                    // Set hosts file as readonly
+                    hostsFile = new FileInfo(hostsFilePath);
+                    hostsFile.IsReadOnly = true;
+                }
             }
             catch (Exception ex)
             {
-                // Console.WriteLine("The process failed: {0}", e.ToString());
-            }
+                logger.Error(ex, "Service failed when preventing changes to HOSTS file.");
+            }            
 
-            finally { }
-
-
-            // Get the Hosts backup file
-            // Set to read-only
-
-            // Get HOSTS file
-            // Check if modified
-            // If modified, copy the backup file
-            // Set hosts file as readonly
 
             logger.Trace(LogHelper.BuildMethodExitTrace());
         }
 
+        #endregion
+
+        #region Private Methods
+        
+        private bool CheckFilesAreEqual(FileInfo fileInfo1, FileInfo fileInfo2)
+        {
+            if (fileInfo1.Length != fileInfo2.Length)
+            {
+                return false;
+            }
+            
+            if (fileInfo1.LastWriteTime != fileInfo2.CreationTime)
+            {
+                return false;
+            }
+
+            byte[] file1 = File.ReadAllBytes(fileInfo1.FullName);
+            byte[] file2 = File.ReadAllBytes(fileInfo2.FullName);
+
+            if (file1.Length == file2.Length)
+            {
+                for (int i = 0; i < file1.Length; i++)
+                {
+                    if (file1[i] != file2[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+        
         #endregion
     }
 }

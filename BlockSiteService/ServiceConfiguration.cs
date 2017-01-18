@@ -24,8 +24,7 @@ namespace BlockSiteService
                 });
 
                 //Setup Account that window service use to run.  
-                configure.RunAsLocalService();
-
+                configure.RunAsLocalSystem();  // .RunAsLocalService();
                 configure.StartAutomatically();
                 configure.UseNLog();
 

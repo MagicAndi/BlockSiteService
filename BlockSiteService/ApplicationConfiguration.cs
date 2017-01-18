@@ -21,8 +21,8 @@ namespace BlockSiteService
 
         public ApplicationConfiguration()
         {
-            ApplicationTitle = "Base Console Application";
-            HostsFolderPath = @"C:\Windows\System32\Drivers\etc";
+        //    ApplicationTitle = "Base Console Application";
+        //    HostsFolderPath = @"C:\Windows\System32\Drivers\etc";
         }
 
         #endregion        
