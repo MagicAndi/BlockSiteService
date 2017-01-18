@@ -59,7 +59,6 @@ namespace BlockSiteService
                 }
 
                 var hostsFilePath = Path.Combine(AppScope.Configuration.HostsFolderPath, "hosts");
-                logger.Debug("Hosts file path: " + hostsFilePath);
                 var hostsFile = new FileInfo(hostsFilePath);
 
                 if (!hostsFile.Exists)
@@ -69,7 +68,6 @@ namespace BlockSiteService
                 }
 
                 var backupFilePath = Path.Combine(AppScope.Configuration.HostsFolderPath, "hosts.bak");
-                logger.Debug("Hosts backup file path: " + backupFilePath);
                 var backupFile = new FileInfo(backupFilePath);
 
                 if (!backupFile.Exists)
@@ -83,14 +81,14 @@ namespace BlockSiteService
 
                 if(! CheckFilesAreEqual(hostsFile, backupFile))
                 {
-                    // If modified, copy the backup file
-                    var timeStampFilePath = string.Format("{0}_Deleted_{1}.bak", hostsFile.FullName, DateTime.Now.ToString("ddMMyyyy_HHmm"));
-                    hostsFile.CopyTo(timeStampFilePath);
+                    // If modified, copy the backup file 
                     backupFile.CopyTo(hostsFilePath, true);
 
                     // Set hosts file as readonly
                     hostsFile = new FileInfo(hostsFilePath);
                     hostsFile.IsReadOnly = true;
+
+                    logger.Info("Successfully reverted the changes to the HOSTS file.");
                 }
             }
             catch (Exception ex)
@@ -113,7 +111,7 @@ namespace BlockSiteService
                 return false;
             }
             
-            if (fileInfo1.LastWriteTime != fileInfo2.CreationTime)
+            if (fileInfo1.LastWriteTime != fileInfo2.LastWriteTime)
             {
                 return false;
             }
