@@ -17,8 +17,9 @@ namespace BlockSiteService
     {
         #region Private Data
 
-        private static Logger logger = LogManager.GetCurrentClassLogger();
-        private static Timer timer;
+        private Logger logger = LogManager.GetCurrentClassLogger();
+        private Timer timer;
+        private string hostsFolderPath;
         #endregion
 
         #region Constructor(s)
@@ -27,6 +28,10 @@ namespace BlockSiteService
         {
             timer = new Timer(1000 * 60) { AutoReset = true };
             timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
+            
+            var systemPath = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            logger.Debug("System Path: '{0}'.", systemPath);
+            hostsFolderPath = Path.Combine(systemPath, @"drivers\etc");
         }
 
         #endregion
@@ -51,14 +56,7 @@ namespace BlockSiteService
 
             try
             {
-                if (! Directory.Exists(AppScope.Configuration.HostsFolderPath))
-                {
-                    var message = string.Format("The configuration value 'HostsFolderPath' is invalid: '{0}'", 
-                                                AppScope.Configuration.HostsFolderPath);
-                    throw new ConfigurationErrorsException(message);
-                }
-
-                var hostsFilePath = Path.Combine(AppScope.Configuration.HostsFolderPath, "hosts");
+                var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
                 var hostsFile = new FileInfo(hostsFilePath);
 
                 if (!hostsFile.Exists)
@@ -67,7 +65,7 @@ namespace BlockSiteService
                     return;
                 }
 
-                var backupFilePath = Path.Combine(AppScope.Configuration.HostsFolderPath, "hosts.bak");
+                var backupFilePath = Path.Combine(hostsFolderPath, "hosts.bak");
                 var backupFile = new FileInfo(backupFilePath);
 
                 if (!backupFile.Exists)
@@ -81,11 +79,8 @@ namespace BlockSiteService
 
                 if(! CheckFilesAreEqual(hostsFile, backupFile))
                 {
-                    // If modified, copy the backup file 
-                    backupFile.CopyTo(hostsFilePath, true);
-
-                    // Set hosts file as readonly
-                    hostsFile = new FileInfo(hostsFilePath);
+                    hostsFile.IsReadOnly = false;
+                    File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
                     hostsFile.IsReadOnly = true;
 
                     logger.Info("Successfully reverted the changes to the HOSTS file.");
@@ -106,16 +101,6 @@ namespace BlockSiteService
         
         private bool CheckFilesAreEqual(FileInfo fileInfo1, FileInfo fileInfo2)
         {
-            if (fileInfo1.Length != fileInfo2.Length)
-            {
-                return false;
-            }
-            
-            if (fileInfo1.LastWriteTime != fileInfo2.LastWriteTime)
-            {
-                return false;
-            }
-
             byte[] file1 = File.ReadAllBytes(fileInfo1.FullName);
             byte[] file2 = File.ReadAllBytes(fileInfo2.FullName);
 
