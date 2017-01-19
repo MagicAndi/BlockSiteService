@@ -12,6 +12,7 @@ namespace BlockSiteService
         #region Public Properties
 
         public string ApplicationTitle { get; set; }
+        public int PollIntervalInSeconds { get; set; }
 
         #endregion
 
@@ -19,7 +20,6 @@ namespace BlockSiteService
 
         public ApplicationConfiguration()
         {
-            // ApplicationTitle = "Base Console Application";
         }
 
         #endregion        

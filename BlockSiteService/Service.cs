@@ -26,7 +26,7 @@ namespace BlockSiteService
 
         public Service()
         {
-            timer = new Timer(1000 * 60) { AutoReset = true };
+            timer = new Timer(1000 * AppScope.Configuration.PollIntervalInSeconds) { AutoReset = true };
             timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
             
             var systemPath = Environment.GetFolderPath(Environment.SpecialFolder.System);
@@ -81,10 +81,11 @@ namespace BlockSiteService
                 {
                     hostsFile.IsReadOnly = false;
                     File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
-                    hostsFile.IsReadOnly = true;
-
                     logger.Info("Successfully reverted the changes to the HOSTS file.");
                 }
+                
+                hostsFile.IsReadOnly = true;
+                backupFile.IsReadOnly = true;
             }
             catch (Exception ex)
             {
