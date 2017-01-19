@@ -79,6 +79,10 @@ namespace BlockSiteService
 
                 if(! CheckFilesAreEqual(hostsFile, backupFile))
                 {
+                    // Add a visible prompt telling yourself to stay focused!!
+
+                    // Kill any open tabs taht use any blocked domains
+
                     hostsFile.IsReadOnly = false;
                     File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
                     logger.Info("Successfully reverted the changes to the HOSTS file.");
@@ -90,8 +94,7 @@ namespace BlockSiteService
             catch (Exception ex)
             {
                 logger.Error(ex, "Service failed when preventing changes to HOSTS file.");
-            }            
-
+            }
 
             logger.Trace(LogHelper.BuildMethodExitTrace());
         }
