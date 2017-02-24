@@ -9,6 +9,10 @@ using System.Configuration;
 using System.Security.Cryptography;
 
 using NLog;
+
+using OpenQA.Selenium;
+using OpenQA.Selenium.Firefox;
+
 using BlockSiteService.Utilities;
 
 namespace BlockSiteService
@@ -56,6 +60,10 @@ namespace BlockSiteService
 
             try
             {
+                // Debug
+                CheckOpenedBrowserTabs();
+
+
                 var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
                 var hostsFile = new FileInfo(hostsFilePath);
 
@@ -82,6 +90,7 @@ namespace BlockSiteService
                     // Add a visible prompt telling yourself to stay focused!!
 
                     // Kill any open tabs taht use any blocked domains
+                    // CheckOpenedBrowserTabs();
 
                     hostsFile.IsReadOnly = false;
                     File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
@@ -98,11 +107,11 @@ namespace BlockSiteService
 
             logger.Trace(LogHelper.BuildMethodExitTrace());
         }
-
+        
         #endregion
 
         #region Private Methods
-        
+
         private bool CheckFilesAreEqual(FileInfo fileInfo1, FileInfo fileInfo2)
         {
             byte[] file1 = File.ReadAllBytes(fileInfo1.FullName);
@@ -123,7 +132,20 @@ namespace BlockSiteService
 
             return false;
         }
-        
+
+        private void CheckOpenedBrowserTabs()
+        {
+            var firefoxBinary = new FirefoxBinary(@"C:\Program Files\Mozilla Firefox\firefox.exe");
+            IWebDriver driver = new FirefoxDriver(firefoxBinary);
+            var windowHandles = new List<string>(driver.WindowHandles);
+
+            logger.Info("Listing open browser tabs:");
+            foreach (var window in windowHandles)
+            {
+                logger.Info("Window Handle: " + window);
+            }
+        }
+
         #endregion
     }
 }
