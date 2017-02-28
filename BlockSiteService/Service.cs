@@ -10,9 +10,6 @@ using System.Security.Cryptography;
 
 using NLog;
 
-using OpenQA.Selenium;
-using OpenQA.Selenium.Firefox;
-
 using BlockSiteService.Utilities;
 
 namespace BlockSiteService
@@ -62,7 +59,6 @@ namespace BlockSiteService
             {
                 // Debug
                 CheckOpenedBrowserTabs();
-
 
                 var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
                 var hostsFile = new FileInfo(hostsFilePath);
@@ -135,15 +131,26 @@ namespace BlockSiteService
 
         private void CheckOpenedBrowserTabs()
         {
-            var firefoxBinary = new FirefoxBinary(@"C:\Program Files\Mozilla Firefox\firefox.exe");
-            IWebDriver driver = new FirefoxDriver(firefoxBinary);
-            var windowHandles = new List<string>(driver.WindowHandles);
+            // Tried
+            //  - Selenium
+            //  - DDE (no longer works in Firefox)
 
-            logger.Info("Listing open browser tabs:");
-            foreach (var window in windowHandles)
-            {
-                logger.Info("Window Handle: " + window);
-            }
+            // Other approaches:
+
+            //  - UIAutomation 
+            //      - http://hintdesk.com/c-list-all-opened-tabs-of-firefox-with-uiautomation/
+            //      - http://stackoverflow.com/questions/15447518/c-sharp-get-url-from-firefox-but-dont-use-dde
+            //      - https://www.codeproject.com/Articles/141842/Automate-your-UI-using-Microsoft-Automation-Framew
+            //      - https://msdn.microsoft.com/en-us/library/ms747327.aspx
+
+            //  - AutoIT
+            //      - http://stackoverflow.com/questions/6810692/how-to-use-autoitx-in-net-c-without-registering
+            //      - https://www.autoitscript.com/forum/topic/177167-using-autoitx-from-c-net/
+            //      - https://github.com/OpenSharp/NAutoIt
+            //      - https://github.com/search?l=C%23&q=autoit&type=Repositories&utf8=%E2%9C%93
+            
+            // - Miscellaneous
+            //      -- https://github.com/TestStack/White
         }
 
         #endregion
