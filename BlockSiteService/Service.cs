@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
+using System.Diagnostics;
 using System.IO;
-using System.Configuration;
-using System.Security.Cryptography;
+using System.Timers;
 
 using NLog;
 
 using BlockSiteService.Utilities;
+
 
 namespace BlockSiteService
 {
@@ -19,19 +15,19 @@ namespace BlockSiteService
         #region Private Data
 
         private Logger logger = LogManager.GetCurrentClassLogger();
-        private Timer timer;
+        private System.Timers.Timer timer;
         private string hostsFolderPath;
+
         #endregion
 
         #region Constructor(s)
 
         public Service()
         {
-            timer = new Timer(1000 * AppScope.Configuration.PollIntervalInSeconds) { AutoReset = true };
+            timer = new System.Timers.Timer(1000 * AppScope.Configuration.PollIntervalInSeconds) { AutoReset = true };
             timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
             
             var systemPath = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            logger.Debug("System Path: '{0}'.", systemPath);
             hostsFolderPath = Path.Combine(systemPath, @"drivers\etc");
         }
 
@@ -57,9 +53,12 @@ namespace BlockSiteService
 
             try
             {
-                // Debug
-                CheckOpenedBrowserTabs();
+                // DEBUG
+                CloseBrowser();
 
+
+                // TODO - Code to tidy up old log files (keep last n days only...) 
+                //  Use Nlog configuration?
                 var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
                 var hostsFile = new FileInfo(hostsFilePath);
 
@@ -83,10 +82,7 @@ namespace BlockSiteService
 
                 if(! CheckFilesAreEqual(hostsFile, backupFile))
                 {
-                    // Add a visible prompt telling yourself to stay focused!!
-
-                    // Kill any open tabs taht use any blocked domains
-                    // CheckOpenedBrowserTabs();
+                    CloseBrowser();
 
                     hostsFile.IsReadOnly = false;
                     File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
@@ -108,6 +104,36 @@ namespace BlockSiteService
 
         #region Private Methods
 
+        private void CloseBrowser()
+        {
+            if(!AppScope.Configuration.KillBrowser)
+            {
+                return;
+            }
+
+            var browserType = AppScope.Configuration.BrowserType;
+
+            if (!string.IsNullOrEmpty(browserType))
+            {
+                Process[] processes = Process.GetProcessesByName(browserType);
+
+                foreach (Process process in processes)
+                {
+                    try
+                    {
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, string.Format("Unable to kill browser process {0} with PID {1}.", process.ToString(), process.Id));
+                    }
+                }
+            }
+        }
+
         private bool CheckFilesAreEqual(FileInfo fileInfo1, FileInfo fileInfo2)
         {
             byte[] file1 = File.ReadAllBytes(fileInfo1.FullName);
@@ -127,30 +153,6 @@ namespace BlockSiteService
             }
 
             return false;
-        }
-
-        private void CheckOpenedBrowserTabs()
-        {
-            // Tried
-            //  - Selenium
-            //  - DDE (no longer works in Firefox)
-
-            // Other approaches:
-
-            //  - UIAutomation 
-            //      - http://hintdesk.com/c-list-all-opened-tabs-of-firefox-with-uiautomation/
-            //      - http://stackoverflow.com/questions/15447518/c-sharp-get-url-from-firefox-but-dont-use-dde
-            //      - https://www.codeproject.com/Articles/141842/Automate-your-UI-using-Microsoft-Automation-Framew
-            //      - https://msdn.microsoft.com/en-us/library/ms747327.aspx
-
-            //  - AutoIT
-            //      - http://stackoverflow.com/questions/6810692/how-to-use-autoitx-in-net-c-without-registering
-            //      - https://www.autoitscript.com/forum/topic/177167-using-autoitx-from-c-net/
-            //      - https://github.com/OpenSharp/NAutoIt
-            //      - https://github.com/search?l=C%23&q=autoit&type=Repositories&utf8=%E2%9C%93
-            
-            // - Miscellaneous
-            //      -- https://github.com/TestStack/White
         }
 
         #endregion
