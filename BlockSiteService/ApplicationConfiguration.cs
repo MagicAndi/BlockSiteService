@@ -15,6 +15,8 @@ namespace BlockSiteService
         public int PollIntervalInSeconds { get; set; }
         public bool KillBrowser { get; set; }
         public string BrowserType { get; set; }
+        public bool CleanLogFiles { get; set; }
+        public int MaxAgeOfLogFilesInDays { get; set; }
 
         #endregion
 

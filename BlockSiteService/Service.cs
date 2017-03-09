@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Timers;
 
 using NLog;
+using NLog.Targets;
 
 using BlockSiteService.Utilities;
 
@@ -52,13 +54,7 @@ namespace BlockSiteService
             logger.Trace(LogHelper.BuildMethodEntryTrace());
 
             try
-            {
-                // DEBUG
-                CloseBrowser();
-
-
-                // TODO - Code to tidy up old log files (keep last n days only...) 
-                //  Use Nlog configuration?
+            {               
                 var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
                 var hostsFile = new FileInfo(hostsFilePath);
 
@@ -91,6 +87,8 @@ namespace BlockSiteService
                 
                 hostsFile.IsReadOnly = true;
                 backupFile.IsReadOnly = true;
+
+                CleanupLogFiles();
             }
             catch (Exception ex)
             {
@@ -103,6 +101,35 @@ namespace BlockSiteService
         #endregion
 
         #region Private Methods
+
+        private void CleanupLogFiles()
+        {
+            if (!AppScope.Configuration.CleanLogFiles)
+            {
+                return;
+            }
+
+            var maxAgeOfLogFilesInDays = AppScope.Configuration.MaxAgeOfLogFilesInDays;
+
+            if (maxAgeOfLogFilesInDays > 0)
+            {
+                var currentFolderPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                var currentFolder = new DirectoryInfo(currentFolderPath);
+                var maxLogDate = DateTime.Now - new TimeSpan(maxAgeOfLogFilesInDays, 0, 0, 0);
+
+                foreach (FileInfo file in currentFolder.GetFiles())
+                {
+                    if (file.Name.StartsWith("BlockSiteService_") && 
+                        file.Name.EndsWith(".txt") && 
+                        file.CreationTime < maxLogDate)
+                    {
+                        logger.Trace("Deleting log file '" + file.FullName + "'.");
+                        file.Delete();
+                    }
+                }
+            }
+        }
+
 
         private void CloseBrowser()
         {

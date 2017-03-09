@@ -40,7 +40,8 @@ namespace BlockSiteService
         /// <param name="e">The <see cref="UnhandledExceptionEventArgs"/> instance containing the event data.</param>
         static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
         {
-            logger.Error((Exception)e.ExceptionObject, "An unhandled exception has occurred");
+            logger.Error((Exception)e.ExceptionObject, 
+                        string.Format("An unhandled exception has occurred in the {0}.", ApplicationTitle));
             Environment.Exit(1);
         }
     }
