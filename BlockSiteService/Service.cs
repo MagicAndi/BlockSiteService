@@ -45,6 +45,7 @@ namespace BlockSiteService
 
         public void Stop()
         {
+            CloseBrowser();
             timer.Stop();
             logger.Info(string.Format("{0} is stopping at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));
         }
