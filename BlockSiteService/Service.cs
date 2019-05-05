@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Timers;
 
 using NLog;
-using NLog.Targets;
 
 using BlockSiteService.Utilities;
 
@@ -40,7 +40,7 @@ namespace BlockSiteService
         public void Start()
         {
             timer.Start();
-            logger.Info(string.Format("{0} is starting at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));
+            logger.Info(string.Format("{0} is starting at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));            
         }
 
         public void Stop()
@@ -65,29 +65,15 @@ namespace BlockSiteService
                     return;
                 }
 
-                var backupFilePath = Path.Combine(hostsFolderPath, "hosts.bak");
-                var backupFile = new FileInfo(backupFilePath);
-
-                if (!backupFile.Exists)
+                if(hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
                 {
-                    logger.Warn("Unable to find the hosts backup file at '{0}'.", backupFilePath);
-                    hostsFile.CopyTo(backupFilePath);
-                    backupFile = new FileInfo(backupFilePath);
-                    backupFile.IsReadOnly = true;
-                    return;
+                    RebuildHostsFile();
                 }
-
-                if(! CheckFilesAreEqual(hostsFile, backupFile))
+                else if (!hostsFile.IsReadOnly)
                 {
                     CloseBrowser();
-
-                    hostsFile.IsReadOnly = false;
-                    File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
-                    logger.Info("Successfully reverted the changes to the HOSTS file.");
+                    RebuildHostsFile();
                 }
-                
-                hostsFile.IsReadOnly = true;
-                backupFile.IsReadOnly = true;
 
                 CleanupLogFiles();
             }
@@ -130,8 +116,7 @@ namespace BlockSiteService
                 }
             }
         }
-
-
+        
         private void CloseBrowser()
         {
             if(!AppScope.Configuration.KillBrowser)
@@ -181,6 +166,19 @@ namespace BlockSiteService
             }
 
             return false;
+        }
+
+        private void RebuildHostsFile()
+        {
+            // See https://github.com/EddyErkel/Poweshell_updateHostsFile/blob/master/updateHostsFile.ps1
+            // and https://github.com/robledosm/update-mvpsHosts/blob/master/update-mvpsHosts.ps1
+
+            //var timestamp = DateTime.Now.ToString("ddMMyyyy_HHmmss");
+            //var temporaryFileName = string.Format("HostsDownload-{0}.txt", timestamp);
+
+            //WebClient webClient = new WebClient();
+            //webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, @"c:\temp\" + temporaryFileName);
+
         }
 
         #endregion

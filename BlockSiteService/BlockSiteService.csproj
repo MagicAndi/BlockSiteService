@@ -100,8 +100,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>$(TargetFileName) install
-$(TargetFileName) start
-</PostBuildEvent>
+$(TargetFileName) start</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>$(TargetFileName) stop
