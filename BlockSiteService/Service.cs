@@ -65,17 +65,21 @@ namespace BlockSiteService
                     return;
                 }
 
-                if(hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
-                {
-                    RebuildHostsFile();
-                }
-                else if (!hostsFile.IsReadOnly)
-                {
-                    CloseBrowser();
-                    RebuildHostsFile();
-                }
+                // DEBUG
+                logger.Trace(LogHelper.BuildMethodEntryTrace());
+                RebuildHostsFile();
 
-                CleanupLogFiles();
+                //if(hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
+                //{
+                //    RebuildHostsFile();
+                //}
+                //else if (!hostsFile.IsReadOnly)
+                //{
+                //    CloseBrowser();
+                //    RebuildHostsFile();
+                //}
+
+                //CleanupLogFiles();
             }
             catch (Exception ex)
             {
@@ -170,15 +174,20 @@ namespace BlockSiteService
 
         private void RebuildHostsFile()
         {
+            logger.Trace(LogHelper.BuildMethodEntryTrace());
+
             // See https://github.com/EddyErkel/Poweshell_updateHostsFile/blob/master/updateHostsFile.ps1
             // and https://github.com/robledosm/update-mvpsHosts/blob/master/update-mvpsHosts.ps1
 
-            //var timestamp = DateTime.Now.ToString("ddMMyyyy_HHmmss");
-            //var temporaryFileName = string.Format("HostsDownload-{0}.txt", timestamp);
+            var timestamp = DateTime.Now.ToString("ddMMyyyy_HHmmss");
+            var temporaryFileName = string.Format("HostsDownload-{0}.txt", timestamp);
 
-            //WebClient webClient = new WebClient();
-            //webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, @"c:\temp\" + temporaryFileName);
+            WebClient webClient = new WebClient();
+            webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, @"c:\temp\" + temporaryFileName);
 
+
+
+            logger.Trace(LogHelper.BuildMethodExitTrace());
         }
 
         #endregion

@@ -99,12 +99,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>$(TargetFileName) install
-$(TargetFileName) start</PostBuildEvent>
+    <PostBuildEvent>REM $(TargetFileName) install
+REM $(TargetFileName) start</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>$(TargetFileName) stop
-$(TargetFileName) uninstall</PreBuildEvent>
+    <PreBuildEvent>REM $(TargetFileName) stop
+REM $(TargetFileName) uninstall</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
