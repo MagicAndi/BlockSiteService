@@ -81,10 +81,13 @@
     <Compile Include="Utilities\LogHelper.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="WorkSpecificHosts.txt" />
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="Hosts.txt" />
+    <Content Include="HostsTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -99,12 +102,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>REM $(TargetFileName) install
-REM $(TargetFileName) start</PostBuildEvent>
+    <PostBuildEvent>$(TargetFileName) install
+$(TargetFileName) start</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>REM $(TargetFileName) stop
-REM $(TargetFileName) uninstall</PreBuildEvent>
+    <PreBuildEvent>$(TargetFileName) stop
+$(TargetFileName) uninstall</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

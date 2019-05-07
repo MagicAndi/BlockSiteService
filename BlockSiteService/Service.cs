@@ -65,21 +65,19 @@ namespace BlockSiteService
                     return;
                 }
 
-                // DEBUG
-                logger.Trace(LogHelper.BuildMethodEntryTrace());
-                RebuildHostsFile();
+                if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
+                {
+                    RebuildHostsFile();
+                    FlushDns();
+                }
+                else if (!hostsFile.IsReadOnly)
+                {
+                    CloseBrowser();
+                    RebuildHostsFile();
+                    FlushDns();
+                }
 
-                //if(hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
-                //{
-                //    RebuildHostsFile();
-                //}
-                //else if (!hostsFile.IsReadOnly)
-                //{
-                //    CloseBrowser();
-                //    RebuildHostsFile();
-                //}
-
-                //CleanupLogFiles();
+                CleanupLogFiles();
             }
             catch (Exception ex)
             {
@@ -176,18 +174,63 @@ namespace BlockSiteService
         {
             logger.Trace(LogHelper.BuildMethodEntryTrace());
 
-            // See https://github.com/EddyErkel/Poweshell_updateHostsFile/blob/master/updateHostsFile.ps1
-            // and https://github.com/robledosm/update-mvpsHosts/blob/master/update-mvpsHosts.ps1
+            string installFolder = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath);
+            var hostsTemplateFile = new FileInfo(Path.Combine(hostsFolderPath, "HostsTemplate.txt"));
+
+            if (!hostsTemplateFile.Exists)
+            {
+                logger.Warn("Unable to find the hosts template file at '{0}'.", hostsTemplateFile);
+                return;
+            }
 
             var timestamp = DateTime.Now.ToString("ddMMyyyy_HHmmss");
-            var temporaryFileName = string.Format("HostsDownload-{0}.txt", timestamp);
+            var temporaryFilePath = Path.Combine(installFolder, string.Format("HostsDownload-{0}.txt", timestamp));
+            var updatedHostsFilePath = Path.Combine(installFolder, string.Format("UpdatedHosts-{0}.txt", timestamp));
+            
+            hostsTemplateFile.CopyTo(updatedHostsFilePath);
 
             WebClient webClient = new WebClient();
-            webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, @"c:\temp\" + temporaryFileName);
+            webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, temporaryFilePath);
 
+            using (Stream blockedDomains = File.OpenRead(temporaryFilePath))
+            {
+                using (Stream updatedHostsFile = new FileStream(updatedHostsFilePath, FileMode.Append, FileAccess.Write, FileShare.None))
+                {
+                    blockedDomains.CopyTo(updatedHostsFile);
+                }
+            }
+            
+            var currentHostsFile = new FileInfo(Path.Combine(hostsFolderPath, "hosts"));
+            File.Copy(currentHostsFile.FullName, Path.Combine(hostsFolderPath, string.Format("hosts-{0}.bak", timestamp)));
+            var hostsFilePath = currentHostsFile.FullName;
+            currentHostsFile.IsReadOnly = false;
+            currentHostsFile.Delete();
 
+            File.Copy(updatedHostsFilePath, hostsFilePath, true);
+
+            // Set file to read only
+            currentHostsFile = new FileInfo(hostsFilePath);
+            currentHostsFile.IsReadOnly = true;
+
+            // Delete temporary files
+            File.Delete(temporaryFilePath);
+            File.Delete(updatedHostsFilePath);
 
             logger.Trace(LogHelper.BuildMethodExitTrace());
+        }
+
+
+        private void FlushDns()
+        {
+            Process process = new Process();
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.FileName = "ipconfig.exe";
+            process.StartInfo.Arguments = "/flushdns";
+            process.Start();
+            process.WaitForExit();
+            //string output = process.StandardOutput.ReadToEnd();
+            //return output;
         }
 
         #endregion
