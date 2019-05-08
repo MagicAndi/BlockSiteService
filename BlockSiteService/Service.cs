@@ -37,7 +37,7 @@ namespace BlockSiteService
         #endregion
 
         #region Service Methods
-
+        
         public void Start()
         {
             timer.Start();
