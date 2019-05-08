@@ -81,6 +81,7 @@
     <Compile Include="Utilities\LogHelper.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Whitelist.txt" />
     <Content Include="WorkSpecificHosts.txt" />
     <None Include="App.config">
       <SubType>Designer</SubType>

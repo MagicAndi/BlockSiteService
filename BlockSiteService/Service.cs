@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Timers;
@@ -8,7 +9,7 @@ using System.Timers;
 using NLog;
 
 using BlockSiteService.Utilities;
-
+using System.Collections.Generic;
 
 namespace BlockSiteService
 {
@@ -199,7 +200,9 @@ namespace BlockSiteService
                     blockedDomains.CopyTo(updatedHostsFile);
                 }
             }
-            
+
+            WhitelistDomains(updatedHostsFilePath);
+
             var currentHostsFile = new FileInfo(Path.Combine(hostsFolderPath, "hosts"));
             File.Copy(currentHostsFile.FullName, Path.Combine(hostsFolderPath, string.Format("hosts-{0}.bak", timestamp)));
             var hostsFilePath = currentHostsFile.FullName;
@@ -217,6 +220,37 @@ namespace BlockSiteService
             File.Delete(updatedHostsFilePath);
 
             logger.Trace(LogHelper.BuildMethodExitTrace());
+        }
+
+        private void WhitelistDomains(string updatedHostsFilePath)
+        {
+            var whitelistFile = new FileInfo(Path.Combine(hostsFolderPath, "Whitelist.txt"));
+
+            if (whitelistFile.Exists)
+            {
+                var domains = File.ReadLines(whitelistFile.FullName);
+                domains = domains.Where(d => !d.StartsWith("#"));
+
+                foreach (var domain in domains)
+                {
+                    var lines = File.ReadLines(updatedHostsFilePath);
+                    var updatedContent = new List<string>();
+
+                    foreach (var line in lines)
+                    {
+                        if (line.Contains(domain) && (!line.StartsWith("#")))
+                        {
+                            updatedContent.Add("# " + line);
+                        }
+                        else
+                        {
+                            updatedContent.Add(line);
+                        }
+                    }
+
+                    File.WriteAllLines(updatedHostsFilePath, updatedContent);
+                }
+            }
         }
 
 
