@@ -44,7 +44,7 @@ namespace BlockSiteService.Utilities
 
         public static string BuildMethodExitTrace(string returnValue = null, [CallerMemberName] string methodName = "")
         {
-            var traceMessage = string.Concat("Exiting method ", methodName, "()");
+            var traceMessage = string.Concat("Exiting method ", methodName, "()"); 
 
             if (!string.IsNullOrEmpty(returnValue))
             {
