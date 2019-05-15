@@ -68,20 +68,36 @@ namespace BlockSiteService
                 
                 CleanupLogFiles();
                 CleanupTemporaryFiles();
-                DownloadHostsData();
 
-                if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
+                var datestamp = DateTime.Now.ToString("ddMMyyyy");
+                var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
+
+                if (hostsDownloadFile.Exists)
                 {
-                    logger.Info(string.Format("Rebuilding hosts file as it is more than {0} days old. ", AppScope.Configuration.MaxAgeOfHostsFileInDays));
-                    RebuildHostsFile();
-                    FlushDns();
+                    if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
+                    {
+                        logger.Info(string.Format("Rebuilding hosts file as it is more than {0} days old. ", AppScope.Configuration.MaxAgeOfHostsFileInDays));
+                        RebuildHostsFile();
+                        FlushDns();
+                    }
+                    else if (!hostsFile.IsReadOnly)
+                    {
+                        CloseBrowser();
+                        RebuildHostsFile();
+                        FlushDns();
+                    }                   
                 }
-                else if (!hostsFile.IsReadOnly)
+                else
                 {
-                    CloseBrowser();
-                    RebuildHostsFile();
-                    FlushDns();
-                }
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+
+                    WebClient webClient = new WebClient();
+                    webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, hostsDownloadFile.FullName);
+
+                    stopwatch.Stop();
+                    logger.Info("Time to download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
+                }               
             }
             catch (Exception ex)
             {
@@ -110,7 +126,8 @@ namespace BlockSiteService
                     (file.Name.StartsWith("HostsDownload-") && file.Extension == ".txt" && 
                         file.CreationTime < DateTime.Now.AddDays(-maxAgeOfTempFilesInDays)))
                 {
-                    logger.Trace(string.Format("Deleting file {0}", file.FullName));
+                    logger.Info(string.Format("Deleting file {0}", file.FullName));
+                    file.IsReadOnly = false;
                     file.Delete();
                 }
             }
@@ -137,7 +154,8 @@ namespace BlockSiteService
                         file.Name.EndsWith(".txt") && 
                         file.CreationTime < maxLogDate)
                     {
-                        logger.Trace("Deleting log file '" + file.FullName + "'.");
+                        logger.Info("Deleting log file '" + file.FullName + "'.");
+                        file.IsReadOnly = false;
                         file.Delete();
                     }
                 }
@@ -197,20 +215,7 @@ namespace BlockSiteService
 
         private void DownloadHostsData()
         {            
-            var datestamp = DateTime.Now.ToString("ddMMyyyy");
-            var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
-
-            if (!hostsDownloadFile.Exists)
-            {
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                WebClient webClient = new WebClient();
-                webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, hostsDownloadFile.FullName);
-
-                stopwatch.Stop();
-                logger.Info("Timeto download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
-            }
+           
         }
 
         private void RebuildHostsFile()
