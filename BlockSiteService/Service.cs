@@ -116,7 +116,7 @@ namespace BlockSiteService
             var currentFolder = new DirectoryInfo(hostsFolderPath);
             var files = new List<FileInfo>();
             files.AddRange(currentFolder.GetFiles());
-            var maxAgeOfTempFilesInDays = AppScope.Configuration.MaxAgeOfLogFilesInDays;
+            var maxAgeOfTempFilesInDays = AppScope.Configuration.MaxAgeOfHostsFileInDays;
 
             foreach (var file in files)
             {
