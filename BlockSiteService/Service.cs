@@ -29,7 +29,7 @@ namespace BlockSiteService
         {
             timer = new System.Timers.Timer(1000 * AppScope.Configuration.PollIntervalInSeconds) { AutoReset = true };
             timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
-            
+
             var systemPath = Environment.GetFolderPath(Environment.SpecialFolder.System);
             hostsFolderPath = Path.Combine(systemPath, @"drivers\etc");
         }
@@ -37,11 +37,11 @@ namespace BlockSiteService
         #endregion
 
         #region Service Methods
-        
+
         public void Start()
         {
             timer.Start();
-            logger.Info(string.Format("{0} is starting at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));            
+            logger.Info(string.Format("{0} is starting at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));
         }
 
         public void Stop()
@@ -54,7 +54,7 @@ namespace BlockSiteService
         public void OnTimer(object sender, ElapsedEventArgs e)
         {
             logger.Trace(LogHelper.BuildMethodEntryTrace());
-            
+
             try
             {
                 var hostsFilePath = Path.Combine(hostsFolderPath, "hosts");
@@ -65,7 +65,7 @@ namespace BlockSiteService
                     logger.Error("Unable to find the hosts file at '{0}'.", hostsFilePath);
                     return;
                 }
-                
+
                 CleanupLogFiles();
                 CleanupTemporaryFiles();
 
@@ -85,7 +85,7 @@ namespace BlockSiteService
                         CloseBrowser();
                         RebuildHostsFile();
                         FlushDns();
-                    }                   
+                    }
                 }
                 else
                 {
@@ -97,7 +97,7 @@ namespace BlockSiteService
 
                     stopwatch.Stop();
                     logger.Info("Time to download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
-                }               
+                }
             }
             catch (Exception ex)
             {
@@ -110,7 +110,7 @@ namespace BlockSiteService
         #endregion
 
         #region Private Methods
-        
+
         private void CleanupTemporaryFiles()
         {
             var currentFolder = new DirectoryInfo(hostsFolderPath);
@@ -121,9 +121,9 @@ namespace BlockSiteService
             foreach (var file in files)
             {
                 if ((file.Name.StartsWith("UpdatedHosts-") && file.Extension == ".txt") ||
-                    (file.Name.StartsWith("hosts-") && file.Extension == ".bak" && 
+                    (file.Name.StartsWith("hosts-") && file.Extension == ".bak" &&
                         file.CreationTime < DateTime.Now.AddDays(-maxAgeOfTempFilesInDays)) ||
-                    (file.Name.StartsWith("HostsDownload-") && file.Extension == ".txt" && 
+                    (file.Name.StartsWith("HostsDownload-") && file.Extension == ".txt" &&
                         file.CreationTime < DateTime.Now.AddDays(-maxAgeOfTempFilesInDays)))
                 {
                     logger.Info(string.Format("Deleting file {0}", file.FullName));
@@ -150,8 +150,8 @@ namespace BlockSiteService
 
                 foreach (FileInfo file in currentFolder.GetFiles())
                 {
-                    if (file.Name.StartsWith("BlockSiteService_") && 
-                        file.Name.EndsWith(".txt") && 
+                    if (file.Name.StartsWith("BlockSiteService_") &&
+                        file.Name.EndsWith(".txt") &&
                         file.CreationTime < maxLogDate)
                     {
                         logger.Info("Deleting log file '" + file.FullName + "'.");
@@ -161,10 +161,10 @@ namespace BlockSiteService
                 }
             }
         }
-        
+
         private void CloseBrowser()
         {
-            if(!AppScope.Configuration.KillBrowser)
+            if (!AppScope.Configuration.KillBrowser)
             {
                 return;
             }
@@ -214,8 +214,8 @@ namespace BlockSiteService
         }
 
         private void DownloadHostsData()
-        {            
-           
+        {
+
         }
 
         private void RebuildHostsFile()
@@ -306,5 +306,5 @@ namespace BlockSiteService
         }
 
         #endregion
-    } 
+    }
 }
