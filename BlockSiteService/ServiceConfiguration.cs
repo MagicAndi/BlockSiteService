@@ -23,9 +23,9 @@ namespace BlockSiteService
                     service.WhenStopped(s => s.Stop());
                 });
 
-                //Setup Account that window service use to run.  
+                // Setup Account that window service use to run.  
                 configure.RunAsLocalSystem();  // .RunAsLocalService();
-                configure.StartAutomatically();
+                configure.StartAutomaticallyDelayed();
                 configure.UseNLog();
 
                 configure.SetServiceName(serviceName.Replace(" ", ""));
