@@ -68,36 +68,61 @@ namespace BlockSiteService
 
                 CleanupLogFiles();
                 CleanupTemporaryFiles();
+                                
+                var backupFilePath = Path.Combine(hostsFolderPath, "hosts.bak");
+                var backupFile = new FileInfo(backupFilePath);
 
-                var datestamp = DateTime.Now.ToString("ddMMyyyy");
-                var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
-
-                if (hostsDownloadFile.Exists)
+                if (!backupFile.Exists)
                 {
-                    if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
-                    {
-                        logger.Info(string.Format("Rebuilding hosts file as it is more than {0} days old. ", AppScope.Configuration.MaxAgeOfHostsFileInDays));
-                        RebuildHostsFile();
-                        FlushDns();
-                    }
-                    else if (!hostsFile.IsReadOnly)
-                    {
-                        CloseBrowser();
-                        RebuildHostsFile();
-                        FlushDns();
-                    }
+                    logger.Warn("Unable to find the hosts backup file at '{0}'.", backupFilePath);
+                    hostsFile.CopyTo(backupFilePath);
+                    backupFile = new FileInfo(backupFilePath);
+                    backupFile.IsReadOnly = true;
+                    return;
                 }
-                else
+
+                if (!CheckFilesAreEqual(hostsFile, backupFile))
                 {
-                    var stopwatch = new Stopwatch();
-                    stopwatch.Start();
+                    CloseBrowser();
 
-                    WebClient webClient = new WebClient();
-                    webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, hostsDownloadFile.FullName);
-
-                    stopwatch.Stop();
-                    logger.Info("Time to download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
+                    hostsFile.IsReadOnly = false;
+                    File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
+                    logger.Info("Successfully reverted the changes to the HOSTS file.");
                 }
+
+                hostsFile.IsReadOnly = true;
+                backupFile.IsReadOnly = true;
+
+                //var datestamp = DateTime.Now.ToString("ddMMyyyy");
+                //var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
+
+                //if (hostsDownloadFile.Exists)
+                //{
+                //    //if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
+                //    //{
+                //    //    logger.Info(string.Format("Rebuilding hosts file as it is more than {0} days old. ", AppScope.Configuration.MaxAgeOfHostsFileInDays));
+                //    //    RebuildHostsFile();
+                //    //    FlushDns();
+                //    //}
+                //    //else 
+                //    if (!hostsFile.IsReadOnly)
+                //    {
+                //        CloseBrowser();
+                //        RebuildHostsFile();
+                //        FlushDns();
+                //    }
+                //}
+                //else
+                //{
+                //    var stopwatch = new Stopwatch();
+                //    stopwatch.Start();
+
+                //    WebClient webClient = new WebClient();
+                //    webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, hostsDownloadFile.FullName);
+
+                //    stopwatch.Stop();
+                //    logger.Info("Time to download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
+                //}
             }
             catch (Exception ex)
             {
