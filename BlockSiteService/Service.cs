@@ -67,7 +67,6 @@ namespace BlockSiteService
                 }
 
                 CleanupLogFiles();
-                CleanupTemporaryFiles();
                                 
                 var backupFilePath = Path.Combine(hostsFolderPath, "hosts.bak");
                 var backupFile = new FileInfo(backupFilePath);
@@ -92,37 +91,6 @@ namespace BlockSiteService
 
                 hostsFile.IsReadOnly = true;
                 backupFile.IsReadOnly = true;
-
-                //var datestamp = DateTime.Now.ToString("ddMMyyyy");
-                //var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
-
-                //if (hostsDownloadFile.Exists)
-                //{
-                //    //if (hostsFile.LastWriteTime < DateTime.Now.AddDays(-AppScope.Configuration.MaxAgeOfHostsFileInDays))
-                //    //{
-                //    //    logger.Info(string.Format("Rebuilding hosts file as it is more than {0} days old. ", AppScope.Configuration.MaxAgeOfHostsFileInDays));
-                //    //    RebuildHostsFile();
-                //    //    FlushDns();
-                //    //}
-                //    //else 
-                //    if (!hostsFile.IsReadOnly)
-                //    {
-                //        CloseBrowser();
-                //        RebuildHostsFile();
-                //        FlushDns();
-                //    }
-                //}
-                //else
-                //{
-                //    var stopwatch = new Stopwatch();
-                //    stopwatch.Start();
-
-                //    WebClient webClient = new WebClient();
-                //    webClient.DownloadFile(AppScope.Configuration.HostsFileSourceUrl, hostsDownloadFile.FullName);
-
-                //    stopwatch.Stop();
-                //    logger.Info("Time to download hosts data: {0} seconds", stopwatch.Elapsed.TotalSeconds);
-                //}
             }
             catch (Exception ex)
             {
@@ -135,29 +103,7 @@ namespace BlockSiteService
         #endregion
 
         #region Private Methods
-
-        private void CleanupTemporaryFiles()
-        {
-            var currentFolder = new DirectoryInfo(hostsFolderPath);
-            var files = new List<FileInfo>();
-            files.AddRange(currentFolder.GetFiles());
-            var maxAgeOfTempFilesInDays = AppScope.Configuration.MaxAgeOfHostsFileInDays;
-
-            foreach (var file in files)
-            {
-                if ((file.Name.StartsWith("UpdatedHosts-") && file.Extension == ".txt") ||
-                    (file.Name.StartsWith("hosts-") && file.Extension == ".bak" &&
-                        file.CreationTime < DateTime.Now.AddDays(-maxAgeOfTempFilesInDays)) ||
-                    (file.Name.StartsWith("HostsDownload-") && file.Extension == ".txt" &&
-                        file.CreationTime < DateTime.Now.AddDays(-maxAgeOfTempFilesInDays)))
-                {
-                    logger.Info(string.Format("Deleting file {0}", file.FullName));
-                    file.IsReadOnly = false;
-                    file.Delete();
-                }
-            }
-        }
-
+        
         private void CleanupLogFiles()
         {
             if (!AppScope.Configuration.CleanLogFiles)
@@ -236,99 +182,7 @@ namespace BlockSiteService
             }
 
             return false;
-        }
-
-        private void DownloadHostsData()
-        {
-
-        }
-
-        private void RebuildHostsFile()
-        {
-            var hostsTemplateFile = new FileInfo(Path.Combine(hostsFolderPath, "HostsTemplate.txt"));
-
-            if (!hostsTemplateFile.Exists)
-            {
-                logger.Warn("Unable to find the hosts template file at '{0}'.", hostsTemplateFile);
-                return;
-            }
-
-            var timestamp = DateTime.Now.ToString("ddMMyyyy_HHmmss");
-            var updatedHostsFilePath = Path.Combine(hostsFolderPath, string.Format("UpdatedHosts-{0}.txt", timestamp));
-            hostsTemplateFile.CopyTo(updatedHostsFilePath);
-
-            var datestamp = DateTime.Now.ToString("ddMMyyyy");
-            var hostsDownloadFile = new FileInfo(Path.Combine(hostsFolderPath, string.Format("HostsDownload-{0}.txt", datestamp)));
-
-            if (hostsDownloadFile.Exists)
-            {
-                using (Stream blockedDomains = File.OpenRead(hostsDownloadFile.FullName))
-                {
-                    using (Stream updatedHostsFile = new FileStream(updatedHostsFilePath, FileMode.Append, FileAccess.Write, FileShare.None))
-                    {
-                        blockedDomains.CopyTo(updatedHostsFile);
-                    }
-                }
-
-                WhitelistDomains(updatedHostsFilePath);
-
-                var currentHostsFile = new FileInfo(Path.Combine(hostsFolderPath, "hosts"));
-                File.Copy(currentHostsFile.FullName, Path.Combine(hostsFolderPath, string.Format("hosts-{0}.bak", timestamp)));
-                var hostsFilePath = currentHostsFile.FullName;
-                currentHostsFile.IsReadOnly = false;
-                currentHostsFile.Delete();
-
-                File.Copy(updatedHostsFilePath, hostsFilePath, true);
-
-                // Set file to read only
-                currentHostsFile = new FileInfo(hostsFilePath);
-                currentHostsFile.IsReadOnly = true;
-            }
-        }
-
-        private void WhitelistDomains(string updatedHostsFilePath)
-        {
-            var whitelistFile = new FileInfo(Path.Combine(hostsFolderPath, "Whitelist.txt"));
-
-            if (whitelistFile.Exists)
-            {
-                var domains = File.ReadLines(whitelistFile.FullName);
-                domains = domains.Where(d => !d.StartsWith("#"));
-
-                foreach (var domain in domains)
-                {
-                    var lines = File.ReadLines(updatedHostsFilePath);
-                    var updatedContent = new List<string>();
-
-                    foreach (var line in lines)
-                    {
-                        if (line.Contains(domain) && (!line.StartsWith("#")))
-                        {
-                            updatedContent.Add("# " + line);
-                        }
-                        else
-                        {
-                            updatedContent.Add(line);
-                        }
-                    }
-
-                    File.WriteAllLines(updatedHostsFilePath, updatedContent);
-                }
-            }
-        }
-
-        private void FlushDns()
-        {
-            Process process = new Process();
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.FileName = "ipconfig.exe";
-            process.StartInfo.Arguments = "/flushdns";
-            process.Start();
-            process.WaitForExit();
-            //string output = process.StandardOutput.ReadToEnd();
-            //return output;
-        }
+        }        
 
         #endregion
     }

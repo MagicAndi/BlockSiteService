@@ -17,8 +17,6 @@ namespace BlockSiteService
         public string BrowserType { get; set; }
         public bool CleanLogFiles { get; set; }
         public int MaxAgeOfLogFilesInDays { get; set; }
-        public int MaxAgeOfHostsFileInDays { get; set; }
-        public string HostsFileSourceUrl { get; set; }
 
         #endregion
 
