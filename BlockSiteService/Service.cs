@@ -47,6 +47,7 @@ namespace BlockSiteService
         public void Stop()
         {
             CloseBrowser();
+            ForceShutdown();
             timer.Stop();
             logger.Info(string.Format("{0} is stopping at {1}.", AppScope.Configuration.ApplicationTitle, DateTime.Now));
         }
@@ -83,6 +84,7 @@ namespace BlockSiteService
                 if (!CheckFilesAreEqual(hostsFile, backupFile))
                 {
                     CloseBrowser();
+                    ForceShutdown();
 
                     hostsFile.IsReadOnly = false;
                     File.WriteAllText(hostsFilePath, File.ReadAllText(backupFilePath));
@@ -131,6 +133,16 @@ namespace BlockSiteService
                     }
                 }
             }
+        }
+
+        private void ForceShutdown()
+        {
+            if (!AppScope.Configuration.ForceShutdown)
+            {
+                return;
+            }
+
+            Process.Start("shutdown", "/r /t 0");
         }
 
         private void CloseBrowser()
