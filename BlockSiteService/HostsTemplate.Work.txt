@@ -33,9 +33,9 @@
 0.0.0.0 	www.dailymail.co.uk
 0.0.0.0		www.facebook.com
 0.0.0.0		facebook.com
-0.0.0.0 	linkedin.com
-0.0.0.0 	www.linkedin.com
-0.0.0.0		uk.linkedin.com
+# 0.0.0.0 	linkedin.com
+# 0.0.0.0 	www.linkedin.com
+# 0.0.0.0	uk.linkedin.com
 0.0.0.0 	theulsterfry.com
 0.0.0.0 	www.irishnews.com
 0.0.0.0 	irishnews.com
@@ -55,8 +55,9 @@
 0.0.0.0		news.ycombinator.com
 0.0.0.0		www.hntoplinks.com
 0.0.0.0		hntoplinks.com
-0.0.0.0		www.theguardian.com
-0.0.0.0		theguardian.com
+# 0.0.0.0	www.theguardian.com
+# 0.0.0.0	theguardian.com
+
 
 #############################################################
 
